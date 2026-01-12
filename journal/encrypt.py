@@ -1,16 +1,18 @@
-import random
-import string
+from cryptography.fernet import Fernet
 
-chars = " " + string.punctuation + string.digits + string.ascii_letters
-characters = len(chars)
-chars = list(chars)
+# def Generate_Key():
 
-key = chars.copy()
-random.shuffle(key)
+# def Encrypt(key, files):
 
-# print(key)
+# def Decrypt(key, files):
 
-plain_text = input("Enter a message to encrypt")
+if __name__ == "__main__":
+    choice = input("Generate a new key? (y/n): ")
 
+    if choice.lower() == 'y':
+        with open("secret.key", "wb") as key_file:
+            key_file.write(Generate_Key)
 
-for i in characters:
+    choice2 = input("Encrypt or Decrypt? (e/d): ")
+    with open("secret.key", "rb") as key_file:
+        key = key_file.read()
