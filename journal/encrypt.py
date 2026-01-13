@@ -11,8 +11,6 @@ if __name__ == "__main__":
 
     if choice.lower() == 'y':
         with open("secret.key", "wb") as key_file:
-            key_file.write(Generate_Key)
+            key_file.write(Generate_Key())
 
     choice2 = input("Encrypt or Decrypt? (e/d): ")
-    with open("secret.key", "rb") as key_file:
-        key = key_file.read()

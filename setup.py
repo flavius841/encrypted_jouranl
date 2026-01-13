@@ -9,7 +9,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "journal=journal.cli:main",
+            "encrypted_journal=journal.main:main",
         ],
     },
 )
