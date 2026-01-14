@@ -7,9 +7,5 @@ setup(
     install_requires=[
         "cryptography",
     ],
-    entry_points={
-        "console_scripts": [
-            "encrypted_journal=journal.main:main",
-        ],
-    },
+  
 )
