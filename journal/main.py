@@ -10,7 +10,8 @@ current_folder = os.getcwd()
 all_items = os.listdir(current_folder)
 file = None
 init(autoreset=True)
-commnads = ["help", "show", "encrypt", "decrypt",]
+commnads = ["help", "show", "encrypt", "decrypt",
+            "show key", "generate key", "exit", "without usbkey"]
 files = [f for f in all_items if os.path.isfile(
     os.path.join(current_folder, f)) and f.endswith(".txt")]
 commnads = commnads + files
@@ -43,9 +44,13 @@ def main():
 
         elif len(parts) == 2 and parts[0].lower() == 'encrypt' and parts[1] in files:
             file_to_encrypt = find_file(parts[1])
-            Encrypt(file_to_encrypt)
+            Encrypt(file_to_encrypt, use_usbkey=True)
             file_to_encrypt.close()
-            print(f"File '{parts[1]}' has been encrypted.")
+
+        elif len(parts) == 4 and parts[0].lower() == 'encrypt' and parts[2] == 'without' and parts[3] == 'usbkey' and parts[1] in files:
+            file_to_encrypt = find_file(parts[1])
+            Encrypt(file_to_encrypt, use_usbkey=False)
+            file_to_encrypt.close()
 
         elif len(parts) == 2 and parts[0].lower() == 'encrypt' and parts[1] not in files:
             print(f"File '{parts[1]}' does not exist.")
@@ -54,7 +59,9 @@ def main():
             file_to_decrypt = find_file(parts[1])
             Decrypt(file_to_decrypt)
             file_to_decrypt.close()
-            print(f"File '{parts[1]}' has been decrypted.")
+
+        elif message.lower() == "show key":
+            show_key()
 
         elif message.strip().lower() != "":
             print("Invalid command. Type 'Help' to see available commands.")
@@ -71,24 +78,42 @@ def Generate_Key():
     return key
 
 
-def Encrypt(files):
-    with open("secret.key", "rb") as key_file:
-        key = key_file.read()
+def Encrypt(files, use_usbkey):
+    if use_usbkey:
+        key_path = find_usb_key()
+        if key_path:
+            with open(key_path, "rb") as key_file:
+                key = key_file.read()
+        else:
+            print(
+                f"{Fore.RED}ERROR: No USB key found! Please insert the USB drive containing the key.{Style.RESET_ALL}")
+            return
+
+    else:
+        input_key = input("Enter the encryption key: ").strip()
+        key = input_key.encode()
     fernet = Fernet(key)
     original = files.read()
     encrypted = fernet.encrypt(original)
     with open(files.name, "wb") as encrypted_file:
         encrypted_file.write(encrypted)
+    print(f"File '{files.name}' has been encrypted.")
 
 
 def Decrypt(files):
-    with open("secret.key", "rb") as key_file:
+    key_path = find_usb_key()
+    if not key_path:
+        print(f"{Fore.RED}ERROR: No USB key found! Please insert the USB drive containing the key.{Style.RESET_ALL}")
+        return
+
+    with open(key_path, "rb") as key_file:
         key = key_file.read()
     fernet = Fernet(key)
     original = files.read()
     decrypted = fernet.decrypt(original)
     with open(files.name, "wb") as decrypted_file:
         decrypted_file.write(decrypted)
+    print(f"File '{files.name}' has been decrypted.")
 
 
 def ask_if_generate_key():
@@ -138,4 +163,37 @@ def find_usb_key():
     potential_paths = []
 
     if system == "Windows":
-        drives = [f"{d}:\\" for d in ]
+        drives = [f"{d}:\\" for d in string.ascii_uppercase if d not in "ABC"]
+        for drive in drives:
+            if os.path.exists(drive):
+                potential_paths.append(os.path.join(drive, KEY_FILENAME))
+
+    elif system == "Linux":
+        user = os.environ.get('USER', 'root')
+        base_mounts = [f"/media/{user}", "mnt", "/media", f"/run/media/{user}"]
+        for base in base_mounts:
+            if os.path.exists(base):
+                for mount in os.listdir(base):
+                    potential_paths.append(
+                        os.path.join(base, mount, KEY_FILENAME))
+
+    elif system == "Darwin":
+        base = "/Volumes"
+        if os.path.exists(base):
+            for mount in os.listdir(base):
+                potential_paths.append(
+                    os.path.join(base, mount, KEY_FILENAME))
+
+    for path in potential_paths:
+        if os.path.exists(path):
+            return path
+
+
+def show_key():
+    key_path = find_usb_key()
+    if key_path:
+        with open(key_path, "rb") as key_file:
+            key = key_file.read()
+        print(f"Key found at {key_path}: {key.decode()}")
+    else:
+        print(f"{Fore.RED}ERROR: No USB key found! Please insert the USB drive containing the key.{Style.RESET_ALL}")
