@@ -5,6 +5,7 @@ from colorama import init, Fore, Style
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import WordCompleter
 from cryptography.fernet import Fernet
+from pathlib import Path
 
 current_folder = os.getcwd()
 all_items = os.listdir(current_folder)
@@ -30,6 +31,9 @@ def main():
 
         if message.lower() == "help":
             # open_help()
+            # Directory = Path(find_usb_key())
+            # print(Directory.parent)
+            print(find_usb_key())
             pass
 
         elif message.lower() == "show":
@@ -117,7 +121,8 @@ def Decrypt(files):
 
 
 def ask_if_generate_key():
-    if os.path.exists("secret.key"):
+    key_path = find_usb_key()
+    if key_path:
         print(f"{Fore.RED}WARNING: A key already exists!{Style.RESET_ALL}")
         print("If you generate a new key, you will NOT be able to decrypt files")
         print("encrypted with the old key unless you backed it up.")
@@ -127,7 +132,7 @@ def ask_if_generate_key():
             return
     choice = input("Generate a new key? (y/n): ")
     if choice.lower() == 'y':
-        with open("secret.key", "wb") as key_file:
+        with open(key_path, "wb") as key_file:
             key_file.write(Generate_Key())
     elif choice.lower() == 'n':
         pass
@@ -158,7 +163,7 @@ def open_help():
     print(help_text)
 
 
-def find_usb_key():
+def find_usb_key(find_directory=False):
     system = platform.system()
     potential_paths = []
 
@@ -167,6 +172,9 @@ def find_usb_key():
         for drive in drives:
             if os.path.exists(drive):
                 potential_paths.append(os.path.join(drive, KEY_FILENAME))
+
+            elif find_directory:
+                potential_paths.append(drive)
 
     elif system == "Linux":
         user = os.environ.get('USER', 'root')
@@ -177,16 +185,24 @@ def find_usb_key():
                     potential_paths.append(
                         os.path.join(base, mount, KEY_FILENAME))
 
+                    if find_directory:
+                        potential_paths.append(os.path.join(base, mount))
+
     elif system == "Darwin":
         base = "/Volumes"
         if os.path.exists(base):
             for mount in os.listdir(base):
                 potential_paths.append(
                     os.path.join(base, mount, KEY_FILENAME))
+                if find_directory:
+                    potential_paths.append(os.path.join(base, mount))
 
     for path in potential_paths:
         if os.path.exists(path):
             return path
+
+    if not find_directory:
+        return find_usb_key(find_directory=True)
 
 
 def show_key():
