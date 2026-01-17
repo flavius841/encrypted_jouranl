@@ -127,18 +127,18 @@ def ask_if_generate_key():
         print("If you generate a new key, you will NOT be able to decrypt files")
         print("encrypted with the old key unless you backed it up.")
         confirm = input("Are you sure you want to overwrite it? (yes/no): ")
-        if confirm.lower() != "yes":
+        if confirm.lower().strip() == "no":
             print("Key generation cancelled.")
             return
-    choice = input("Generate a new key? (y/n): ")
-    if choice.lower() == 'y':
-        with open(key_path, "wb") as key_file:
-            key_file.write(Generate_Key())
-    elif choice.lower() == 'n':
-        pass
-    else:
-        print("Invalid choice. Please enter 'y' or 'n'.")
-        ask_if_generate_key()
+        elif confirm.lower().strip() != "no" and confirm.lower().strip() != "yes":
+            print("Invalid choice. Please enter 'yes' or 'no'.")
+            ask_if_generate_key()
+
+    key_path = key_path.replace("/secret.key", "")
+
+    with open(f"{key_path}/secret.key", "wb") as key_file:
+        key_file.write(Generate_Key())
+        print(f"New key generated and saved to {key_path}/secret.key")
 
 
 def find_file(filename):
