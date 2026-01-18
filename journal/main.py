@@ -6,6 +6,7 @@ from prompt_toolkit import prompt
 from prompt_toolkit.completion import WordCompleter
 from cryptography.fernet import Fernet
 from pathlib import Path
+import ctypes
 
 current_folder = os.getcwd()
 all_items = os.listdir(current_folder)
@@ -64,6 +65,8 @@ def main():
             Decrypt(file_to_decrypt)
             file_to_decrypt.close()
 
+        # elif len(parts) == 4 and parts[0].lower() == 'decrypt' and parts[2] == 'without' and parts[3] == 'usbkey' and parts[1] in files:
+
         elif message.lower() == "show key":
             show_key()
 
@@ -85,7 +88,7 @@ def Generate_Key():
 def Encrypt(files, use_usbkey):
     if use_usbkey:
         key_path = find_usb_key()
-        if key_path:
+        if "secret.key" in key_path:
             with open(key_path, "rb") as key_file:
                 key = key_file.read()
         else:
@@ -104,14 +107,21 @@ def Encrypt(files, use_usbkey):
     print(f"File '{files.name}' has been encrypted.")
 
 
-def Decrypt(files):
-    key_path = find_usb_key()
-    if not key_path:
-        print(f"{Fore.RED}ERROR: No USB key found! Please insert the USB drive containing the key.{Style.RESET_ALL}")
-        return
+def Decrypt(files, use_usbkey=True):
+    if use_usbkey:
+        key_path = find_usb_key()
+        if "secret.key" not in key_path:
+            print(
+                f"{Fore.RED}ERROR: No USB key found! Please insert the USB drive containing the key.{Style.RESET_ALL}")
+            return
 
-    with open(key_path, "rb") as key_file:
-        key = key_file.read()
+        with open(key_path, "rb") as key_file:
+            key = key_file.read()
+
+    else:
+        input_key = input("Enter the decryption key: ").strip()
+        key = input_key.encode()
+
     fernet = Fernet(key)
     original = files.read()
     decrypted = fernet.decrypt(original)
@@ -121,8 +131,10 @@ def Decrypt(files):
 
 
 def ask_if_generate_key():
+    system = platform.system()
     key_path = find_usb_key()
-    if key_path:
+
+    if "secret.key" in key_path:
         print(f"{Fore.RED}WARNING: A key already exists!{Style.RESET_ALL}")
         print("If you generate a new key, you will NOT be able to decrypt files")
         print("encrypted with the old key unless you backed it up.")
@@ -133,6 +145,13 @@ def ask_if_generate_key():
         elif confirm.lower().strip() != "no" and confirm.lower().strip() != "yes":
             print("Invalid choice. Please enter 'yes' or 'no'.")
             ask_if_generate_key()
+
+    if system == "Windows":
+        key_path = key_path.replace("\\secret.key", "")
+        with open(f"{key_path}\\secret.key", "wb") as key_file:
+            key_file.write(Generate_Key())
+            print(f"New key generated and saved to {key_path}\\secret.key")
+        return
 
     key_path = key_path.replace("/secret.key", "")
 
@@ -170,10 +189,10 @@ def find_usb_key(find_directory=False):
     if system == "Windows":
         drives = [f"{d}:\\" for d in string.ascii_uppercase if d not in "ABC"]
         for drive in drives:
-            if os.path.exists(drive):
+            if os.path.exists(drive) and is_removable(drive):
                 potential_paths.append(os.path.join(drive, KEY_FILENAME))
 
-            elif find_directory:
+            if find_directory and is_removable(drive) and os.path.exists(drive):
                 potential_paths.append(drive)
 
     elif system == "Linux":
@@ -207,9 +226,16 @@ def find_usb_key(find_directory=False):
 
 def show_key():
     key_path = find_usb_key()
-    if key_path:
+    if "secret.key" in key_path:
         with open(key_path, "rb") as key_file:
             key = key_file.read()
         print(f"Key found at {key_path}: {key.decode()}")
     else:
         print(f"{Fore.RED}ERROR: No USB key found! Please insert the USB drive containing the key.{Style.RESET_ALL}")
+
+
+def is_removable(drive_path):
+    if platform.system() == "Windows":
+        drive_type = ctypes.windll.kernel32.GetDriveTypeW(drive_path)
+        return drive_type == 2
+    return True
