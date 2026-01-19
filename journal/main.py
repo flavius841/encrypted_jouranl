@@ -1,12 +1,19 @@
 import os
 import platform
 import string
-from colorama import init, Fore, Style
+from colorama import init, Fore, Style as CStyle
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import WordCompleter
 from cryptography.fernet import Fernet
 from pathlib import Path
 import ctypes
+from prompt_toolkit.formatted_text import HTML
+from prompt_toolkit.styles import Style as PTStyle
+
+style = PTStyle.from_dict({
+    "prompt": "ansigreen dim",
+    "": "bold ansibrightgreen",
+})
 
 current_folder = os.getcwd()
 all_items = os.listdir(current_folder)
@@ -23,19 +30,29 @@ KEY_FILENAME = "secret.key"
 
 
 def main():
-    print("Welcome to my CLI project. Here you cand create edit and \nfind what you want in your text "
-          "file \nType 'help' to see available commands or read more information.")
+    print(fr"""{CStyle.BRIGHT} {Fore.YELLOW}
+,------.                                      ,--.            ,--.         ,--.                                      ,--.    
+|  .---',--,--,  ,---.,--.--.,--. ,--.,---. ,-'  '-. ,---.  ,-|  |         |  | ,---. ,--.,--.,--.--. ,--,--.,--,--, |  |    
+|  `--, |      \| .--'|  .--' \  '  /| .-. |'-.  .-'| .-. :' .-. |    ,--. |  || .-. ||  ||  ||  .--'' ,-.  ||      \|  |    
+|  `---.|  ||  |\ `--.|  |     \   ' | '-' '  |  |  \   --.\ `-' |    |  '-'  /' '-' ''  ''  '|  |   \ '-'  ||  ||  ||  |    
+`------'`--''--' `---'`--'   .-'  /  |  |-'   `--'   `----' `---'      `-----'  `---'  `----' `--'    `--`--'`--''--'`--'    
+                             `---'   `--' 
+          Welcome to my CLI project. Here you cand encrypt and decrypt your text files.
+          Type 'help' to see available commands or read more information. {CStyle.RESET_ALL}
+          """)
 
     while True:
-        message = prompt(">>> ", completer=command_completer).strip()
+        message = prompt(
+            [("class:prompt", ">>> ")],
+            style=style
+        )
         parts = message.split()
 
         if message.lower() == "help":
-            # open_help()
+            open_help()
             # Directory = Path(find_usb_key())
             # print(Directory.parent)
-            print(find_usb_key())
-            pass
+            # print(find_usb_key())
 
         elif message.lower() == "show":
             show_files()
@@ -65,7 +82,10 @@ def main():
             Decrypt(file_to_decrypt)
             file_to_decrypt.close()
 
-        # elif len(parts) == 4 and parts[0].lower() == 'decrypt' and parts[2] == 'without' and parts[3] == 'usbkey' and parts[1] in files:
+        elif len(parts) == 4 and parts[0].lower() == 'decrypt' and parts[2] == 'without' and parts[3] == 'usbkey' and parts[1] in files:
+            file_to_decrypt = find_file(parts[1])
+            Decrypt(file_to_decrypt, use_usbkey=False)
+            file_to_decrypt.close()
 
         elif message.lower() == "show key":
             show_key()
@@ -93,7 +113,7 @@ def Encrypt(files, use_usbkey):
                 key = key_file.read()
         else:
             print(
-                f"{Fore.RED}ERROR: No USB key found! Please insert the USB drive containing the key.{Style.RESET_ALL}")
+                f"{Fore.RED}ERROR: No USB key found! Please insert the USB drive containing the key.{CStyle.RESET_ALL}")
             return
 
     else:
@@ -112,7 +132,7 @@ def Decrypt(files, use_usbkey=True):
         key_path = find_usb_key()
         if "secret.key" not in key_path:
             print(
-                f"{Fore.RED}ERROR: No USB key found! Please insert the USB drive containing the key.{Style.RESET_ALL}")
+                f"{Fore.RED}ERROR: No USB key found! Please insert the USB drive containing the key.{CStyle.RESET_ALL}")
             return
 
         with open(key_path, "rb") as key_file:
@@ -121,13 +141,17 @@ def Decrypt(files, use_usbkey=True):
     else:
         input_key = input("Enter the decryption key: ").strip()
         key = input_key.encode()
+    try:
+        fernet = Fernet(key)
+        original = files.read()
+        decrypted = fernet.decrypt(original)
+        with open(files.name, "wb") as decrypted_file:
+            decrypted_file.write(decrypted)
+        print(f"File '{files.name}' has been decrypted.")
 
-    fernet = Fernet(key)
-    original = files.read()
-    decrypted = fernet.decrypt(original)
-    with open(files.name, "wb") as decrypted_file:
-        decrypted_file.write(decrypted)
-    print(f"File '{files.name}' has been decrypted.")
+    except Exception as e:
+        print(
+            f"{Fore.RED}ERROR: Decryption failed{str(e)}{CStyle.RESET_ALL}, maybe the key is incorrect?")
 
 
 def ask_if_generate_key():
@@ -135,7 +159,7 @@ def ask_if_generate_key():
     key_path = find_usb_key()
 
     if "secret.key" in key_path:
-        print(f"{Fore.RED}WARNING: A key already exists!{Style.RESET_ALL}")
+        print(f"{Fore.RED}WARNING: A key already exists!{CStyle.RESET_ALL}")
         print("If you generate a new key, you will NOT be able to decrypt files")
         print("encrypted with the old key unless you backed it up.")
         confirm = input("Are you sure you want to overwrite it? (yes/no): ")
@@ -169,15 +193,29 @@ def find_file(filename):
 
 def open_help():
     help_text = f"""
-    {Fore.BLUE}encrypted_journal Help:{Style.RESET_ALL}
+    {Fore.BLUE}encrypted_journal Help:{CStyle.RESET_ALL}
 
-    - To encrypt a file, enter the command{Fore.CYAN} 'encrypt <filename>'{Style.RESET_ALL}.
+    - To encrypt a file, enter the command{Fore.CYAN} 'encrypt <filename>'{CStyle.RESET_ALL}.
       Example: encrypt myfile.txt
 
-    - To decrypt a file, enter the command{Fore.CYAN} 'decrypt <filename>'{Style.RESET_ALL}.
+    - To decrypt a file, enter the command{Fore.CYAN} 'decrypt <filename>'{CStyle.RESET_ALL}.
       Example: decrypt myfile.txt
+    
+    - To encrypt a file without using the USB key, enter the command
+      {Fore.CYAN} 'encrypt <filename> without usbkey'{CStyle.RESET_ALL}.
+      Example: encrypt myfile.txt without usbkey
 
-    - Type{Fore.GREEN} 'exit'{Style.RESET_ALL} to quit the application.
+    - To decrypt a file without using the USB key, enter the command
+      {Fore.CYAN} 'decrypt <filename> without usbkey'{CStyle.RESET_ALL}.
+      Example: decrypt myfile.txt without usbkey
+
+    - To generate a new encryption key on your USB drive, type{Fore.CYAN} 'generate key'{CStyle.RESET_ALL}.
+
+    - To view the current encryption key stored on your USB drive, type{Fore.CYAN} 'show key'{CStyle.RESET_ALL}.
+
+    - Type{Fore.CYAN} 'show'{CStyle.RESET_ALL} to list all text files in the current directory.
+
+    - Type{Fore.GREEN} 'exit'{CStyle.RESET_ALL} to quit the application.
     """
     print(help_text)
 
