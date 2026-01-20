@@ -160,6 +160,10 @@ def ask_if_generate_key():
     system = platform.system()
     key_path = find_usb_key()
 
+    if not key_path:
+        print(f"{Fore.RED}ERROR: No USB key found! Please insert the USB drive containing the key.{CStyle.RESET_ALL}")
+        return
+
     if "secret.key" in key_path:
         print(f"{Fore.RED}WARNING: A key already exists!{CStyle.RESET_ALL}")
         print("If you generate a new key, you will NOT be able to decrypt files")
@@ -174,9 +178,9 @@ def ask_if_generate_key():
 
     if system == "Windows":
         key_path = key_path.replace("\\secret.key", "")
-        with open(f"{key_path}\\secret.key", "wb") as key_file:
+        with open(f"{key_path}/secret.key", "wb") as key_file:
             key_file.write(Generate_Key())
-            print(f"New key generated and saved to {key_path}\\secret.key")
+            print(f"New key generated and saved to {key_path}/secret.key")
         return
 
     key_path = key_path.replace("/secret.key", "")
@@ -241,20 +245,22 @@ def find_usb_key(find_directory=False):
         for base in base_mounts:
             if os.path.exists(base):
                 for mount in os.listdir(base):
-                    potential_paths.append(
-                        os.path.join(base, mount, KEY_FILENAME))
+                    if is_removable(os.path.join(base, mount)):
+                        potential_paths.append(
+                            os.path.join(base, mount, KEY_FILENAME))
 
-                    if find_directory:
-                        potential_paths.append(os.path.join(base, mount))
+                        if find_directory:
+                            potential_paths.append(os.path.join(base, mount))
 
     elif system == "Darwin":
         base = "/Volumes"
         if os.path.exists(base):
             for mount in os.listdir(base):
-                potential_paths.append(
-                    os.path.join(base, mount, KEY_FILENAME))
-                if find_directory:
-                    potential_paths.append(os.path.join(base, mount))
+                if is_removable(os.path.join(base, mount)):
+                    potential_paths.append(
+                        os.path.join(base, mount, KEY_FILENAME))
+                    if find_directory:
+                        potential_paths.append(os.path.join(base, mount))
 
     for path in potential_paths:
         if os.path.exists(path):
