@@ -9,6 +9,7 @@ from pathlib import Path
 import ctypes
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.styles import Style as PTStyle
+import subprocess
 
 style = PTStyle.from_dict({
     "prompt": "ansigreen dim",
@@ -44,15 +45,16 @@ def main():
     while True:
         message = prompt(
             [("class:prompt", ">>> ")],
-            style=style
-        )
+            style=style,
+            completer=command_completer,
+        ).strip()
         parts = message.split()
 
         if message.lower() == "help":
-            open_help()
+            # open_help()
             # Directory = Path(find_usb_key())
             # print(Directory.parent)
-            # print(find_usb_key())
+            print(find_usb_key())
 
         elif message.lower() == "show":
             show_files()
@@ -272,8 +274,42 @@ def show_key():
         print(f"{Fore.RED}ERROR: No USB key found! Please insert the USB drive containing the key.{Style.RESET_ALL}")
 
 
-def is_removable(drive_path):
+def is_removable(path):
     if platform.system() == "Windows":
-        drive_type = ctypes.windll.kernel32.GetDriveTypeW(drive_path)
+        drive_type = ctypes.windll.kernel32.GetDriveTypeW(path)
         return drive_type == 2
-    return True
+
+    elif platform.system() == "Linux":
+        device = None
+        with open('/proc/mounts', 'r') as f:
+            for line in f:
+                parts = line.split()
+                if path == parts[1]:
+                    device = parts[0]
+                    break
+
+        if not device:
+            return False
+
+        drive_name = device.split('/')[-1]
+        drive_name = ''.join([i for i in drive_name if not i.isdigit()])
+
+        sys_path = f'/sys/class/block/{drive_name}/removable'
+        if os.path.exists(sys_path):
+            with open(sys_path, 'r') as f:
+                return f.read().strip() == '1'
+
+        return False
+
+    elif system == "Darwin":
+        try:
+            output = subprocess.check_output(
+                ['diskutil', 'info', path],
+                stderr=subprocess.STDOUT
+            ).decode('utf-8')
+
+            return "Removable Media:   Yes" in output
+        except:
+            return False
+
+    return False
