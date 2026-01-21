@@ -7,16 +7,41 @@ This is a **CLI (Command Line Interface) project** that allows you to:
 
 ---
 
-## How  to use it
+## Usage
 
-1. Firstly you need an USB stick where to store your key
-2. Plug your USB stick into your computer
-3. Now you can:
-   * generate a key by typing "generate key"
-   * encrypt a file by typing "encrypt <filename.txt>"
-   * decrypt a file by typing "decrypt <filename.txt>"
+### Getting Started
 
----
+1. Prepare a USB flash drive to store your encryption key.
+2. Plug the USB drive into your computer.
+
+### Commands
+
+With a USB drive connected, you can run the following commands:
+
+- Generate a key  
+  generate key
+
+- Encrypt a file  
+  encrypt <filename.txt>
+
+- Decrypt a file  
+  decrypt <filename.txt>
+
+### Without a USB Drive
+
+You can also encrypt and decrypt files without using a USB drive:
+
+- Encrypt without USB  
+  encrypt <filename.txt> without USB
+
+- Decrypt without USB  
+  decrypt <filename.txt> without USB
+
+### Other
+
+- Display the generated key  
+  show key
+
 
 ## Prerequisites
 
@@ -128,4 +153,5 @@ in your terminal or Command Prompt.
 * Make sure Python, pipx, and Git are installed correctly before running the CLI.
 
 ---
+
 
