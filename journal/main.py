@@ -111,7 +111,11 @@ def Generate_Key():
 def Encrypt(files, use_usbkey):
     if use_usbkey:
         key_path = find_usb_key()
-        if "secret.key" in key_path and os.path.exists(key_path):
+        if not key_path:
+            print(
+                f"{Fore.RED}ERROR: No USB key found! Please insert the USB drive containing the key.{CStyle.RESET_ALL}")
+            return
+        if "secret.key" in key_path:
             with open(key_path, "rb") as key_file:
                 key = key_file.read()
         else:
@@ -139,7 +143,11 @@ def Encrypt(files, use_usbkey):
 def Decrypt(files, use_usbkey=True):
     if use_usbkey:
         key_path = find_usb_key()
-        if "secret.key" not in key_path and not os.path.exists(key_path):
+        if not key_path:
+            print(
+                f"{Fore.RED}ERROR: No USB key found! Please insert the USB drive containing the key.{CStyle.RESET_ALL}")
+            return
+        if "secret.key" not in key_path:
             print(
                 f"{Fore.RED}ERROR: No USB key found! Please insert the USB drive containing the key.{CStyle.RESET_ALL}")
             return
