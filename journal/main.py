@@ -51,9 +51,6 @@ def main():
         parts = message.split()
 
         if message.lower() == "help":
-            # open_help()
-            # Directory = Path(find_usb_key())
-            # print(Directory.parent)
             print(find_usb_key())
 
         elif message.lower() == "show":
@@ -98,6 +95,10 @@ def main():
 
 def show_files():
     print("Text files in the current directory:")
+    if not files:
+        print(f"{Fore.YELLOW}No text files found.{CStyle.RESET_ALL}")
+        return
+
     for f in files:
         print(f"- {f}")
 
@@ -121,12 +122,18 @@ def Encrypt(files, use_usbkey):
     else:
         input_key = input("Enter the encryption key: ").strip()
         key = input_key.encode()
-    fernet = Fernet(key)
-    original = files.read()
-    encrypted = fernet.encrypt(original)
-    with open(files.name, "wb") as encrypted_file:
-        encrypted_file.write(encrypted)
-    print(f"File '{files.name}' has been encrypted.")
+
+    try:
+        fernet = Fernet(key)
+        original = files.read()
+        encrypted = fernet.encrypt(original)
+        with open(files.name, "wb") as encrypted_file:
+            encrypted_file.write(encrypted)
+        print(f"File '{files.name}' has been encrypted.")
+
+    except Exception as e:
+        print(
+            f"{Fore.RED}ERROR: Encryption failed {str(e)}{CStyle.RESET_ALL}")
 
 
 def Decrypt(files, use_usbkey=True):
@@ -153,7 +160,7 @@ def Decrypt(files, use_usbkey=True):
 
     except Exception as e:
         print(
-            f"{Fore.RED}ERROR: Decryption failed{str(e)}{CStyle.RESET_ALL}, maybe the key is incorrect?")
+            f"{Fore.RED}ERROR: Decryption failed{str(e)}{CStyle.RESET_ALL}")
 
 
 def ask_if_generate_key():

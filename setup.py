@@ -12,6 +12,8 @@ setup(
     install_requires=[
 
         "cryptography",
+        "colorama",
+        "prompt_toolkit",
 
     ],
 
