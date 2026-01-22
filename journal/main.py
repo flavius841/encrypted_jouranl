@@ -51,7 +51,7 @@ def main():
         parts = message.split()
 
         if message.lower() == "help":
-            print(find_usb_key())
+            open_help()
 
         elif message.lower() == "show":
             show_files()
