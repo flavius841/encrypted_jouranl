@@ -43,6 +43,26 @@ You can also encrypt and decrypt files without using a USB drive:
   show key
 
 
+---
+
+## Notes
+
+- This CLI only works in the directory you are currently in.
+- Make sure **Python**, **pipx**, and **Git** are installed correctly before running the CLI.
+- Make sure you do **not already have a file named `secret.key`** on your USB stick that you use for something else.
+
+If you want to keep your existing `secret.key` file:
+
+1. Download this repository.
+2. Open `main.py`.
+3. Find all occurrences of `secret.key`.
+4. Use the **“Change all occurrences”** option in your editor.
+5. Rename it to a new filename that will be used by this CLI.
+6. Rebuild the CLI so the changes take effect.
+
+---
+
+
 ## Prerequisites
 
 To run this project, you need to have **Python** and **Git** installed on your system.
@@ -146,12 +166,6 @@ encrypted_journal
 
 in your terminal or Command Prompt.
 
----
 
-## Notes
-* This CLI only works in the folder you are currently in.
-* Make sure Python, pipx, and Git are installed correctly before running the CLI.
-
----
 
 
