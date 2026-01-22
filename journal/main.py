@@ -139,7 +139,7 @@ def Encrypt(files, use_usbkey):
 def Decrypt(files, use_usbkey=True):
     if use_usbkey:
         key_path = find_usb_key()
-        if "secret.key" not in key_path and os.path.exists(key_path):
+        if "secret.key" not in key_path and not os.path.exists(key_path):
             print(
                 f"{Fore.RED}ERROR: No USB key found! Please insert the USB drive containing the key.{CStyle.RESET_ALL}")
             return
